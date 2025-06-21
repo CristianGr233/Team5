@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Roadmaps</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Montserrat',sans-serif;}</style>
+
+  <script>
+    const CSRF = "{{ csrf_token   }}";
+    async function deleteRoadmap(id, el) {
+      const resp = await fetch(`/roadmap/${id}/delete/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": CSRF },
+      });
+
+      if (resp.ok) {
+        el.remove();
+      } else {
+        alert("Failed to delete");
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64">
+<header class="bg-gray-100 w-full h-[20vh]">
+  <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 pt-4 flex-wrap">
+    <!-- Logo -->
+    <a href="{% url 'index' %}">
+      <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-16 w-auto mt-2" />
+    </a>
+
+    <div class="flex items-center gap-4">
+      {% if user.is_authenticated %}
+        <!-- My Roadmaps -->
+        <a
+          href="{% url 'my_roadmaps' %}"
+          class=" hover:text-blue-500 text-black font-semibold py-2 px-4 rounded-xl transition whitespace-nowrap"
+        >
+          My Roadmaps
+        </a>
+      {% endif %}
+
+    <!-- User Menu -->
+    <div class="relative" x-data="{ open: false }" @click.away="open = false">
+      <button
+        @click="open = !open"
+        class="bg-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-blue-600 focus:outline-none"
+        type="button"
+      >
+        {% if user.is_authenticated %}
+          <img src="{{ user.social_auth.first.extra_data.picture }}" alt="Avatar" class="w-14 h-14 rounded-full object-cover" />
+        {% else %}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5.121 17.804A9 9 0 1117.804 5.121M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        {% endif %}
+      </button>
+
+      <!-- Dropdown -->
+      <div
+        x-show="open"
+        x-transition:enter="transition duration-300 ease-out"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition duration-200 ease-in"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="absolute right-0 mt-2 w-64 bg-white p-6 rounded-2xl shadow-xl text-center space-y-2 z-50"
+        x-cloak
+      >
+        {% if user.is_authenticated %}
+          {% with user.social_auth.first as account %}
+            <img src="{{ account.extra_data.picture }}" alt="Avatar" class="w-16 h-16 rounded-full shadow-md mx-auto object-cover" />
+            <p class="text-gray-700 text-lg font-semibold">{{ account.extra_data.name }}</p>
+            <p class="text-gray-500 text-sm">{{ account.extra_data.email }}</p>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="mt-4 text-blue-500 hover:underline font-medium w-full">
+                Log out
+              </button>
+            </form>
+          {% endwith %}
+        {% else %}
+          <p class="text-gray-500 mb-2">Log in to continue</p>
+          <a href="{% url 'social:begin' 'google-oauth2' %}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition">
+            Log in with Google
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<section class="max-w-4xl w-full mx-auto mt-10 px-4 sm:px-8">
+  <h1 class="text-3xl font-bold mb-6">My Roadmaps</h1>
+
+  {% if roadmaps %}
+    <div class="grid gap-6">
+      {% for r in roadmaps %}
+        <div id="card-{{ r.id }}"
+             class="relative bg-white shadow rounded-xl p-6 hover:shadow-lg transition"
+             x-data>
+          <div class="flex justify-between items-center">
+            <a href="{% url 'roadmap_detail' r.id %}" class="text-xl font-semibold hover:underline">
+              {{ r.topic }}
+            </a>
+            <span class="text-sm text-gray-500">{{ r.created_at|date:"Y-m-d" }}</span>
+          </div>
+
+          <p class="text-sm text-gray-600 mt-2">{{ r.project_idea }}</p>
+          <p class="text-sm text-gray-500 mt-1">
+            {{ r.total_hours }} h total &middot; {{ r.week_hours }} h/week
+          </p>
+
+          <!-- Delete -->
+          <button
+            class="absolute bottom-4 right-4 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
+            title="Delete"
+            @click="deleteRoadmap('{{ r.id }}', $el.closest('#card-{{ r.id }}'))">
+            &times;
+          </button>
+              </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-gray-600">You haven’t created any roadmaps yet.</p>
+  {% endif %}
+</section>
+</body>
+</html>

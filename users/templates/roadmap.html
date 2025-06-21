@@ -11,77 +11,77 @@
     body { font-family: 'Montserrat', sans-serif; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64">
+<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64 items-center">
 <!-- Header -->
-<header class="bg-gray-100 w-full h-[20vh]">
-  <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 pt-4 flex-wrap">
-    <!-- Logo -->
-    <a href="{% url 'index' %}">
-      <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-16 w-auto mt-2" />
-    </a>
+  <header class="bg-gray-100 w-full h-[20vh]">
+    <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 pt-4 flex-wrap">
+      <!-- Logo -->
+      <a href="{% url 'index' %}">
+        <img src="{% static 'images/logo.png' %}" alt="Logo" class="h-16 w-auto mt-2" />
+      </a>
 
-    <div class="flex items-center gap-4">
-      {% if user.is_authenticated %}
-        <!-- My Roadmaps -->
-        <a
-          href="{% url 'index' %}"
-          class=" hover:text-blue-500 text-black font-semibold py-2 px-4 rounded-xl transition whitespace-nowrap"
-        >
-          My Roadmaps
-        </a>
-      {% endif %}
-
-    <!-- User Menu -->
-    <div class="relative" x-data="{ open: false }" @click.away="open = false">
-      <button
-        @click="open = !open"
-        class="bg-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-blue-600 focus:outline-none"
-        type="button"
-      >
+      <div class="flex items-center gap-4">
         {% if user.is_authenticated %}
-          <img src="{{ user.social_auth.first.extra_data.picture }}" alt="Avatar" class="w-14 h-14 rounded-full object-cover" />
-        {% else %}
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M5.121 17.804A9 9 0 1117.804 5.121M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        {% endif %}
-      </button>
-
-      <!-- Dropdown -->
-      <div
-        x-show="open"
-        x-transition:enter="transition duration-300 ease-out"
-        x-transition:enter-start="opacity-0 scale-95"
-        x-transition:enter-end="opacity-100 scale-100"
-        x-transition:leave="transition duration-200 ease-in"
-        x-transition:leave-start="opacity-100 scale-100"
-        x-transition:leave-end="opacity-0 scale-95"
-        class="absolute right-0 mt-2 w-64 bg-white p-6 rounded-2xl shadow-xl text-center space-y-2 z-50"
-        x-cloak
-      >
-        {% if user.is_authenticated %}
-          {% with user.social_auth.first as account %}
-            <img src="{{ account.extra_data.picture }}" alt="Avatar" class="w-16 h-16 rounded-full shadow-md mx-auto object-cover" />
-            <p class="text-gray-700 text-lg font-semibold">{{ account.extra_data.name }}</p>
-            <p class="text-gray-500 text-sm">{{ account.extra_data.email }}</p>
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button type="submit" class="mt-4 text-blue-500 hover:underline font-medium w-full">
-                Log out
-              </button>
-            </form>
-          {% endwith %}
-        {% else %}
-          <p class="text-gray-500 mb-2">Log in to continue</p>
-          <a href="{% url 'social:begin' 'google-oauth2' %}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition">
-            Log in with Google
+          <!-- My Roadmaps -->
+          <a
+            href="{% url 'my_roadmaps' %}"
+            class=" hover:text-blue-500 text-black font-semibold py-2 px-4 rounded-xl transition whitespace-nowrap"
+          >
+            My Roadmaps
           </a>
         {% endif %}
+
+      <!-- User Menu -->
+      <div class="relative" x-data="{ open: false }" @click.away="open = false">
+        <button
+          @click="open = !open"
+          class="bg-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-blue-600 focus:outline-none"
+          type="button"
+        >
+          {% if user.is_authenticated %}
+            <img src="{{ user.social_auth.first.extra_data.picture }}" alt="Avatar" class="w-14 h-14 rounded-full object-cover" />
+          {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5.121 17.804A9 9 0 1117.804 5.121M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          {% endif %}
+        </button>
+
+        <!-- Dropdown -->
+        <div
+          x-show="open"
+          x-transition:enter="transition duration-300 ease-out"
+          x-transition:enter-start="opacity-0 scale-95"
+          x-transition:enter-end="opacity-100 scale-100"
+          x-transition:leave="transition duration-200 ease-in"
+          x-transition:leave-start="opacity-100 scale-100"
+          x-transition:leave-end="opacity-0 scale-95"
+          class="absolute right-0 mt-2 w-64 bg-white p-6 rounded-2xl shadow-xl text-center space-y-2 z-50"
+          x-cloak
+        >
+          {% if user.is_authenticated %}
+            {% with user.social_auth.first as account %}
+              <img src="{{ account.extra_data.picture }}" alt="Avatar" class="w-16 h-16 rounded-full shadow-md mx-auto object-cover" />
+              <p class="text-gray-700 text-lg font-semibold">{{ account.extra_data.name }}</p>
+              <p class="text-gray-500 text-sm">{{ account.extra_data.email }}</p>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="mt-4 text-blue-500 hover:underline font-medium w-full">
+                  Log out
+                </button>
+              </form>
+            {% endwith %}
+          {% else %}
+            <p class="text-gray-500 mb-2">Log in to continue</p>
+            <a href="{% url 'social:begin' 'google-oauth2' %}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition">
+              Log in with Google
+            </a>
+          {% endif %}
+        </div>
       </div>
     </div>
-  </div>
-</header>
+  </header>
 
   <div class="bg-white shadow-xl rounded-2xl p-8 max-w-3xl w-full">
 
@@ -90,6 +90,13 @@
     <pre class="bg-gray-100 p-4 rounded-xl overflow-auto text-sm">{{ roadmap.raw_json }}</pre>
 
   </div>
+
+  <ul class="text-gray-700 mb-6">
+      <li><b>Total hours:</b> {{ roadmap.total_hours }}</li>
+      <li><b>Hours / week:</b> {{ roadmap.week_hours }}</li>
+      <li><b>Start:</b> {{ roadmap.start_date }}</li>
+      <li><b>End:</b> {{ roadmap.end_date }}</li>
+  </ul>
 
 </body>
 </html>
