@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>TODO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-xl text-center space-y-6 w-96">
+        <h1 class="text-2xl font-bold text-gray-800">TODO Приложение</h1>
+
+        {% if user.is_authenticated %}
+            {% with user.social_auth.first as account %}
+                <div class="flex flex-col items-center space-y-4">
+                    <img src="{{ account.extra_data.picture }}" alt="Avatar" class="w-16 h-16 rounded-full shadow-md">
+                    <p class="text-gray-700 text-lg font-semibold mt-2">{{ account.extra_data.name }}</p>
+                    <p class="text-gray-500 text-sm">{{ account.extra_data.email }}</p>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="mt-4 text-red-500 hover:underline font-medium">
+                            Выйти
+                        </button>
+                    </form>
+                </div>
+            {% endwith %}
+        {% else %}
+            <p class="text-gray-500">Войдите, чтобы продолжить</p>
+            <a href="{% url 'social:begin' 'google-oauth2' %}" class="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl transition">
+                Войти через Google
+            </a>
+        {% endif %}
+    </div>
+</body>
+</html>
