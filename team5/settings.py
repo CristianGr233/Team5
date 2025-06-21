@@ -62,6 +62,8 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     'profile',
 ]
 
+OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
