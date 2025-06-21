@@ -3,7 +3,9 @@
 from decouple import config
 import os, json, re, requests, datetime as dt
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, get_object_or_404, render
+from .models import Roadmap
 
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 API_KEY            = config("OPENROUTER_API_KEY")
@@ -75,4 +77,68 @@ def generate_suggestions(request):
     if not ideas:
         ideas = re.findall(r'"([^"]+)"', raw)[:3] or raw.strip().split("\n")[:3]
 
-    return JsonResponse({"ideas": ideas})
+    return JsonResponse({
+        "ideas": ideas,
+        "total_hours": total_hours,
+        "topic": topic
+    })
+
+def create_roadmap(request):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST expected")
+
+    try:
+        topic         = request.POST["topic"].strip()
+        total_hours   = int(request.POST["total_hours"])          # ← берём готовое
+        project_idea  = request.POST["selected_project"].strip()
+    except (KeyError, ValueError):
+        return HttpResponseBadRequest("Bad data")
+
+    prompt = (
+        f"I want to learn <{topic}>. "
+        f"I have <{total_hours}> hours. "
+        "I need a road map for this course that will contain topics I need to learn for this course. "
+        "For each topic I will need amount of hours I need to spent on it and list of few subtopics, that I need to go over. "
+        "Each topic should contribute to the final project by parts, including this topic in the project. "
+        "The project part should include a task for the project, that would include the topic user just went over, "
+        "building a final project that combines all the knowledge. "
+        f"The project idea is: <{project_idea}>. "
+        "Please provide output as JSON file I can download. "
+        "The JSON file should follow the following structure NO EXTRA TEXT DO NOT FORGET FINAL PROJECT PART: "
+        '{ "topics":[ { "name": "", "hours": 0, "subtopics": [ { "name": "", "description": "" } ], "project_part": "" } ], '
+        '"final_project": { "name": "", "description": "" } }'
+    )
+
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    data    = {
+        "model": "openai/gpt-4o-mini",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 4000,
+    }
+
+    try:
+        resp = requests.post(OPENROUTER_ENDPOINT, headers=headers, json=data, timeout=60)
+        resp.raise_for_status()
+        raw_json = resp.json()["choices"][0]["message"]["content"]
+
+        print('----------------------------------------')
+        print(raw_json)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    roadmap = Roadmap.objects.create(
+        user=request.user,
+        topic=topic,
+        total_hours=total_hours,
+        project_idea=project_idea,
+        raw_json=raw_json,
+    )
+    return redirect("roadmap_detail", roadmap_id=roadmap.id)
+
+
+def roadmap_detail(request, roadmap_id):
+    roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
+    return render(request, "roadmap.html", {"roadmap": roadmap})
+
+

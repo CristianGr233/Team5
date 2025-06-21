@@ -20,46 +20,35 @@
     }
   </style>
 </head>
+
 <script>
 function roadmapGenerator () {
   return {
-    topic:       '',
-    hours:       20,
-    start_date:  '',
-    end_date:    '',
-
-    loading:   false,
-    submitted: false,
-    ideas:     [],
+    topic:'', hours:20, start_date:'', end_date:'',
+    loading:false, submitted:false,
+    ideas:[], totalHours:0,
+    selectedIdea:'', customOpen:false,
+    submitting:false,
 
     async submit () {
-      this.loading   = true
-      this.submitted = false
-
+      this.loading = true;  this.submitted = false;
       const resp = await fetch("{% url 'generate_suggestions' %}", {
-        method:  "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken":  "{{ csrf_token }}",
-        },
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
         body: JSON.stringify({
-          topic:      this.topic,
-          hours:      this.hours,
+          topic: this.topic,
+          hours: this.hours,
           start_date: this.start_date,
-          end_date:   this.end_date,
+          end_date: this.end_date,
         }),
-      })
+      });
+      if (!resp.ok) { alert(await resp.text()); this.loading = false; return; }
 
-      if (!resp.ok) {
-        alert("Error: " + (await resp.text()))
-        this.loading = false
-        return
-      }
-
-      const data = await resp.json()
-      this.ideas = data.ideas        // ['Project1', 'Project2', ...]
-      this.loading   = false
-      this.submitted = true
+      const data      = await resp.json();
+      this.ideas      = data.ideas;
+      this.totalHours = data.total_hours;
+      this.topic      = data.topic;      // на случай, если LLM поправил регистр
+      this.loading = false; this.submitted = true;
     },
   }
 }
@@ -141,7 +130,7 @@ function roadmapGenerator () {
 <!-- Main -->
 <main class="flex-1 flex justify-center items-start px-4 h-[80vh]">
   <div
-    class="bg-white shadow-2xl rounded-3xl p-8 sm:p-10 max-w-xl w-full text-center md:h-[530px]"
+    class="bg-white shadow-2xl rounded-3xl p-8 sm:p-10 max-w-xl w-full text-center md:h-[530px] relative"
     x-data="roadmapGenerator()"
   >
 
@@ -209,8 +198,7 @@ function roadmapGenerator () {
     </div>
 
     <!-- Step 3: Suggestions -->
-    <div
-      x-show="!loading && submitted"
+    <div x-show="!loading && submitted"
       x-transition:enter="transition duration-1000 ease-in-out"
       x-transition:enter-start="opacity-0 blur-sm"
       x-transition:enter-end="opacity-100 blur-0"
@@ -218,50 +206,63 @@ function roadmapGenerator () {
       x-transition:leave-start="opacity-100 blur-0"
       x-transition:leave-end="opacity-0 blur-sm"
       x-cloak
-      class="space-y-6"
-      x-data="{ selected: '', customOpen: false }"
-    >
+         class="space-y-6 ">
+
       <h2 class="text-2xl font-bold text-gray-800">Select a suggested roadmap</h2>
 
-      <form method="post" class="space-y-4">
+      <form action="{% url 'create_roadmap' %}" method="post"
+            @submit="submitting = true"
+            class="space-y-4">
         {% csrf_token %}
-        <input type="hidden" name="selected_project" :value="selected" />
+
+        <!-- hidden fields -->
+        <input type="hidden" name="topic"         :value="topic">
+        <input type="hidden" name="total_hours"   :value="totalHours">
+        <input type="hidden" name="selected_project" :value="selectedIdea">
 
         <div class="flex flex-col gap-4">
-        <template x-for="idea in ideas" :key="idea">
-          <button
-            type="submit"
-            @click="selected = idea"
-            class="bg-gray-100 hover:bg-gray-200 rounded-xl py-3 px-4 text-lg font-medium text-left"
-          x-text="idea"></button>
-        </template>
-      </div>
+          <template x-for="idea in ideas" :key="idea">
+            <button type="button"
+                    @click="selectedIdea = idea"
+                    :class="selectedIdea === idea ? 'ring-2 ring-blue-500' : ''"
+                    class="bg-gray-100 hover:bg-gray-200 rounded-xl py-3 px-4 text-lg text-left"
+                    x-text="idea"></button>
+          </template>
+        </div>
 
         <div class="text-center">
-          <button
-            type="button"
-            @click="customOpen = !customOpen"
-            class="text-gray-500 hover:text-blue-600 transition font-medium mt-4"
-          >
+          <button type="button" @click="customOpen = !customOpen"
+                  class="text-gray-500 hover:text-blue-600 mt-4">
             Or input your project idea
           </button>
         </div>
 
-        <div x-show="customOpen" x-transition x-cloak class="mt-4">
-          <input
-            type="text"
-            name="selected_project"
-            x-model="selected"
-            class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400"
-            placeholder="Input your project idea…"
-          />
+        <div x-show="customOpen" x-cloak x-transition class="mt-4">
+          <input x-model="selectedIdea"
+                 class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400"
+                 placeholder="Input your project idea…">
         </div>
-        <button
-            type="submit"
-            class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-xl transition w-full sm:w-auto"
-          >
-            Submit
-          </button>
+
+        <button type="submit"
+                :disabled="!selectedIdea || submitting"
+                class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-xl w-full sm:w-auto
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+
+          <span x-show="!submitting">Build your roadmap</span>
+
+          <span x-show="submitting" x-cloak class="flex items-center justify-center gap-2">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" class="opacity-25" />
+              <path d="M12 2a10 10 0 0110 10" class="opacity-75" />
+            </svg>
+            Redirecting…
+          </span>
+
+        </button>
+
+        <div x-show="submitting" x-cloak
+             class="absolute inset-0 bg-white/70 rounded-2xl flex items-center justify-center"></div>
       </form>
     </div>
 
