@@ -1,34 +1,56 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" x-data="{ open: false }" @click.away="open = false">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>TODO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.12.0/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-2xl shadow-xl text-center space-y-6 w-96">
-        <h1 class="text-2xl font-bold text-gray-800">TODO Приложение</h1>
+<body class="bg-gray-100 min-h-screen relative">
+<div class="fixed top-4 right-4 z-50 flex items-center" x-data="{ open: false }" @click.away="open = false">
+    <button
+        @click="open = !open"
+        class="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-red-600 focus:outline-none relative z-20"
+        aria-label="Toggle user menu"
+        type="button"
+    >
+        {% if user.is_authenticated %}
+            <img src="{{ user.social_auth.first.extra_data.picture }}" alt="Avatar" class="w-8 h-8 rounded-full" />
+        {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5.121 17.804A9 9 0 1117.804 5.121M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        {% endif %}
+    </button>
 
+    <div
+        x-show="open"
+        x-transition
+        class="absolute top-0 right-full mr-2 w-64 bg-white p-6 rounded-2xl shadow-xl text-center space-y-6 z-10"
+        style="display: none;"
+    >
         {% if user.is_authenticated %}
             {% with user.social_auth.first as account %}
-                <div class="flex flex-col items-center space-y-4">
-                    <img src="{{ account.extra_data.picture }}" alt="Avatar" class="w-16 h-16 rounded-full shadow-md">
-                    <p class="text-gray-700 text-lg font-semibold mt-2">{{ account.extra_data.name }}</p>
-                    <p class="text-gray-500 text-sm">{{ account.extra_data.email }}</p>
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="mt-4 text-red-500 hover:underline font-medium">
-                            Выйти
-                        </button>
-                    </form>
-                </div>
+                <img src="{{ account.extra_data.picture }}" alt="Avatar" class="w-16 h-16 rounded-full shadow-md mx-auto" />
+                <p class="text-gray-700 text-lg font-semibold">{{ account.extra_data.name }}</p>
+                <p class="text-gray-500 text-sm">{{ account.extra_data.email }}</p>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="mt-4 text-red-500 hover:underline font-medium w-full">
+                        Выйти
+                    </button>
+                </form>
             {% endwith %}
         {% else %}
-            <p class="text-gray-500">Войдите, чтобы продолжить</p>
-            <a href="{% url 'social:begin' 'google-oauth2' %}" class="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl transition">
+            <p class="text-gray-500 mb-4">Войдите, чтобы продолжить</p>
+            <a href="{% url 'social:begin' 'google-oauth2' %}" class="inline-block bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl transition">
                 Войти через Google
             </a>
         {% endif %}
     </div>
+</div>
+
+
 </body>
 </html>
