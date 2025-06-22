@@ -247,16 +247,15 @@ def add_to_calendar(request, roadmap_id, step_index):
     except Exception:
         return HttpResponseBadRequest("Step not found")
 
-    start_dt = datetime.combine(step['start'], time(17, 0))
+    start_date = step['start']
 
     days_needed = max(1, math.ceil(step['hours'] / daily_quota))
-    end_date = step['start'] + timedelta(days=days_needed)
-    end_dt = datetime.combine(end_date, time(17, 0))
+    end_date = start_date + timedelta(days=days_needed)
     event = {
-        'summary': f"{roadmap.topic}",
+        'summary': f"{step['name']}",
         'description': f"Roadmap step '" + step['name'] + "', " + str(step['hours']) + "h.",
-        'start': {'dateTime': start_dt.isoformat(), 'timeZone': 'Europe/Chisinau'},
-        'end': {'dateTime': end_dt.isoformat(), 'timeZone': 'Europe/Chisinau'},
+        'start': {'date': start_date.isoformat()},
+        'end':   {'date': end_date.isoformat()},
     }
 
     service = build('calendar', 'v3', credentials=creds)
