@@ -116,7 +116,7 @@
                 </div>
               </div>
               <!-- card-->
-              <details class="group w-full">
+              <details class="group w-full" {% if forloop.first %}open{% endif %}>
                 <summary
                   class="cursor-pointer bg-blue-500 hover:bg-blue-600
                          text-white font-semibold py-3 pl-6 pr-12 rounded-xl
@@ -133,7 +133,7 @@
                   <span class="flex flex-row justify-between items-center">
                     <p><b>Hours:</b> {{ t.hours }}</p>
                     <a
-                      href="{% url 'index' %}"
+                      href="{% url 'add_to_calendar' roadmap.id forloop.counter0 %}"
                       class="ml-4 bg-blue-400 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md"
                     >
                       Add to calendar
@@ -166,13 +166,6 @@
           Final project: {{ final.name }}
         </h3>
         <p class="text-sm text-gray-700">{{ final.description }}</p>
-
-        <div class="text-right mt-6">
-          <button class="bg-orange-500 hover:bg-orange-600
-                         text-white font-semibold py-2 px-6 rounded-xl">
-            Save
-          </button>
-        </div>
       </div>
     </section>
 
