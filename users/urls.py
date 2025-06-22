@@ -9,4 +9,9 @@ urlpatterns = [
     path("my-roadmaps/", views.my_roadmaps, name="my_roadmaps"),
     path("roadmap/<uuid:roadmap_id>/delete/", views.delete_roadmap, name="delete_roadmap"),
     path("roadmap/<uuid:roadmap_id>/add_to_calendar/<int:step_index>/", views.add_to_calendar, name="add_to_calendar"),
+    path(
+        'roadmap/<uuid:roadmap_id>/article/',
+        views.get_or_generate_article,
+        name='get_or_generate_article'
+    ),
 ]

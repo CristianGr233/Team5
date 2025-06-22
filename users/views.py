@@ -12,8 +12,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-from .models import Roadmap
-
+from .models import Roadmap, Article
 from datetime import date, datetime, time, timedelta
 import math
 
@@ -174,11 +173,13 @@ def roadmap_detail(request, roadmap_id):
         if cur_date > roadmap.end_date:
             break
 
-    return render(request, "roadmap.html", {
-        "roadmap": roadmap,
-        "topics": schedule,
-        "final": final,
-        "raw": raw,
+    articles = roadmap.articles.order_by('-created_at')
+    return render(request, 'roadmap.html', {
+        'roadmap': roadmap,
+        'topics': schedule,
+        'final': final,
+        'raw': raw,
+        'articles': articles,
     })
 
 
@@ -267,3 +268,61 @@ def add_to_calendar(request, roadmap_id, step_index):
 
     # 8. Возвращаем результаты
     return redirect('roadmap_detail', roadmap_id=roadmap.id)
+
+
+
+def get_or_generate_article(request, roadmap_id):
+    roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
+    subtopic = request.POST.get('subtopic','').strip()
+    if not subtopic:
+        return HttpResponseBadRequest('Missing subtopic')
+
+    art = Article.objects.filter(roadmap=roadmap, topic=subtopic).first()
+    from_cache = True
+    if not art:
+        from_cache = False
+        # Просим AI отдать строго JSON с полями content и sources
+        prompt = (
+            f"Write steps to learn '{subtopic}' (5–7 bullet points). "
+            "Also provide a list of 3 reputable sources (URLs) to use for research. "
+            "Respond **only** with JSON in this format, no extra text:\n"
+            '{"content": ["1.", "2.", "..."], "sources": ["https://...", "https://...", "https://..."]}'
+        )
+        headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+        data = {
+            "model": "openai/gpt-4o-mini",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000,
+            "temperature": 0.7,
+        }
+        try:
+            r = requests.post(OPENROUTER_ENDPOINT, headers=headers, json=data, timeout=60)
+            r.raise_for_status()
+            raw = r.json()["choices"][0]["message"]["content"]
+
+            # Вычленяем JSON из ответа
+            m = re.search(r"\{.*\}", raw, re.S)
+            parsed = json.loads(m.group(0))
+            steps = parsed["content"]    # список строк
+            sources = parsed["sources"]  # список URL
+            # Приводим к тексту
+            content_text = "\n".join(f"{s}" for i,s in enumerate(steps))
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+        art = Article.objects.create(
+            roadmap=roadmap,
+            user=request.user,
+            topic=subtopic,
+            content=content_text,
+            sources=sources
+        )
+
+    # Отдаём все поля фронту
+    return JsonResponse({
+        "topic":      art.topic,
+        "content":    art.content,
+        "created_at": art.created_at.isoformat(),
+        "from_cache": from_cache,
+        "sources":    art.sources,
+    })

@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/x-icon" href="{% static 'images/favicon1.ico' %}">
   <style>
     body { font-family: 'Montserrat', sans-serif;
            background-image:
@@ -47,10 +48,10 @@
           {% if user.is_authenticated %}
             <img src="{{ user.social_auth.first.extra_data.picture }}" alt="Avatar" class="w-14 h-14 rounded-full object-cover" />
           {% else %}
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M5.121 17.804A9 9 0 1117.804 5.121M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2C10.2386 2 8 4.23858 8 7C8 7.55228 8.44772 8 9 8C9.55228 8 10 7.55228 10 7C10 5.34315 11.3431 4 13 4H17C18.6569 4 20 5.34315 20 7V17C20 18.6569 18.6569 20 17 20H13C11.3431 20 10 18.6569 10 17C10 16.4477 9.55228 16 9 16C8.44772 16 8 16.4477 8 17C8 19.7614 10.2386 22 13 22H17C19.7614 22 22 19.7614 22 17V7C22 4.23858 19.7614 2 17 2H13Z" fill="#000000"/>
+              <path d="M3 11C2.44772 11 2 11.4477 2 12C2 12.5523 2.44772 13 3 13H11.2821C11.1931 13.1098 11.1078 13.2163 11.0271 13.318C10.7816 13.6277 10.5738 13.8996 10.427 14.0945C10.3536 14.1921 10.2952 14.2705 10.255 14.3251L10.2084 14.3884L10.1959 14.4055L10.1915 14.4115C10.1914 14.4116 10.191 14.4122 11 15L10.1915 14.4115C9.86687 14.8583 9.96541 15.4844 10.4122 15.809C10.859 16.1336 11.4843 16.0346 11.809 15.5879L11.8118 15.584L11.822 15.57L11.8638 15.5132C11.9007 15.4632 11.9553 15.3897 12.0247 15.2975C12.1637 15.113 12.3612 14.8546 12.5942 14.5606C13.0655 13.9663 13.6623 13.2519 14.2071 12.7071L14.9142 12L14.2071 11.2929C13.6623 10.7481 13.0655 10.0337 12.5942 9.43937C12.3612 9.14542 12.1637 8.88702 12.0247 8.7025C11.9553 8.61033 11.9007 8.53682 11.8638 8.48679L11.822 8.43002L11.8118 8.41602L11.8095 8.41281C11.4848 7.96606 10.859 7.86637 10.4122 8.19098C9.96541 8.51561 9.86636 9.14098 10.191 9.58778L11 9C10.191 9.58778 10.1909 9.58773 10.191 9.58778L10.1925 9.58985L10.1959 9.59454L10.2084 9.61162L10.255 9.67492C10.2952 9.72946 10.3536 9.80795 10.427 9.90549C10.5738 10.1004 10.7816 10.3723 11.0271 10.682C11.1078 10.7837 11.1931 10.8902 11.2821 11H3Z" fill="#000000"/>
+              </svg>
           {% endif %}
         </button>
 
@@ -90,7 +91,14 @@
   </header>
 
   <div class="bg-white shadow-xl rounded-2xl p-8 max-w-3xl mb-6 w-full">
-    <section class="flex flex-col items-center  relative w-full max-w-xl mx-auto ">
+     <section class="flex flex-col items-center  relative w-full max-w-xl mx-auto"
+         x-data="{
+           showPanel: false,
+           panelTitle: '',
+           loading: false,
+           panelContent: '',
+           panelSources: []
+         }">
       <h1 class="text-2xl text-bold">{{ roadmap.topic }} Roadmap</h1>
       <!-- flex-колонка -->
       <div class="flex flex-col items-center relative">
@@ -142,7 +150,39 @@
                   {% if t.subtopics %}
                     <ul class="list-disc pl-5 mt-2 space-y-1">
                       {% for s in t.subtopics %}
-                        <li><b>{{ s.name }}</b> — {{ s.description }}</li>
+                        <li>
+                          <button
+                            @click="
+                              panelTitle    = '{{ s.name }}';
+                              panelContent  = '';
+                              loading       = true;
+                              showPanel     = true;
+                              fetch('{% url 'get_or_generate_article' roadmap.id %}', {
+                                method: 'POST',
+                                headers: {
+                                  'X-CSRFToken': '{{ csrf_token }}',
+                                  'Content-Type': 'application/x-www-form-urlencoded'
+                                },
+                                body: new URLSearchParams({ subtopic: '{{ s.name }}' })
+                              })
+                              .then(res => res.json())
+                              .then(data => {
+                                loading       = false;
+                                panelContent  = data.content;
+                                panelSources  = data.sources;    /* ← здесь */
+                              })
+                              .catch(() => {
+                                loading       = false;
+                                panelContent  = 'Ошибка загрузки статьи.';
+                                panelSources  = [];
+                              });
+                            "
+                            class="font-semibold text-blue-600 hover:underline"
+                          >
+                            {{ s.name }}
+                          </button>
+                          — {{ s.description|truncatechars:50 }}
+                        </li>
                       {% endfor %}
                     </ul>
                   {% endif %}
@@ -154,6 +194,62 @@
             </li>
           {% endfor %}
         </ul>
+
+
+            <!-- overlay + side-panel -->
+        <div
+          x-show="showPanel"
+          x-transition.opacity
+          class="fixed inset-0 flex z-50"
+        >
+          <!-- затемнённый фон -->
+          <div
+            class="absolute inset-0 bg-black bg-opacity-50"
+            @click="showPanel = false"
+          ></div>
+
+          <!-- сама панель справа -->
+          <div
+            class="relative ml-auto w-1/3 h-full bg-white shadow-lg"
+            @click.stop
+          >
+            <div class="p-6 overflow-auto h-full">
+              <span class="flex flex-row justify-between items-center">
+                <h2 class="text-2xl font-bold mb-4" x-text="panelTitle"></h2>
+                <button
+                    @click="showPanel = false"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-md"
+                  >
+                    Х
+                </button>
+              </span>
+              <!-- loader -->
+                <div x-show="loading" class="flex justify-center items-center h-32 mb-6">
+                  <svg class="animate-spin h-10 w-10 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                </div>
+                <!-- article content -->
+                <div x-show="!loading" class="text-gray-800 whitespace-pre-line mb-6" x-text="panelContent"></div>
+
+                <hr class="border-t-1 border-blue-500 mb-6" />
+
+                <div x-show="!loading" class="text-sm text-blue-600 space-y-1">
+                  <h3 class="font-semibold mb-2">Sources:</h3>
+                  <ul class="list-disc list-inside">
+                    <template x-for="src in panelSources" :key="src">
+                      <li>
+                        <a :href="src" target="_blank" x-text="src"></a>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+
+            </div>
+          </div>
+        </div>
+
 
         <!-- нижняя точка -->
         <div class="w-4 h-4 bg-blue-900 rounded-full mt-8"></div>
