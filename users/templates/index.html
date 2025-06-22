@@ -3,13 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TODO</title>
+  <title>StudyMap</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
-
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/custom.css' %}" />
+  <link rel="icon" type="image/x-icon" href="{% static 'images/favicon1.ico' %}">
 
   <style>
     body {
@@ -55,7 +55,7 @@ function roadmapGenerator () {
 </script>
 
 
-<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64">
+<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64 lg:overflow-hidden">
 <!-- Header -->
 <header class="bg-gray-100 w-full h-[20vh]">
   <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 pt-4 flex-wrap">
@@ -68,7 +68,7 @@ function roadmapGenerator () {
       {% if user.is_authenticated %}
         <!-- My Roadmaps -->
         <a
-          href="{% url 'index' %}"
+          href="{% url 'my_roadmaps' %}"
           class=" hover:text-blue-500 text-black font-semibold py-2 px-4 rounded-xl transition whitespace-nowrap"
         >
           My Roadmaps
@@ -128,7 +128,9 @@ function roadmapGenerator () {
 </header>
 
 <!-- Main -->
-<main class="flex-1 flex justify-center items-start px-4 h-[80vh]">
+<main class="flex-1 flex justify-center items-start px-4 h-[80vh] ">
+  <img src="{% static 'images/road.png' %}" class="hidden lg:block absolute right-0 h-full w-auto mr-8"></img>
+  <img src="{% static 'images/calendar.png' %}" class="hidden lg:block absolute left-0 h-[60vh] w-auto mt-10 ml-16"></img>
   <div
     class="bg-white shadow-2xl rounded-3xl p-8 sm:p-10 max-w-xl w-full text-center md:h-[530px] relative"
     x-data="roadmapGenerator()"
@@ -159,7 +161,7 @@ function roadmapGenerator () {
         <!-- Slider -->
         <div class="mt-6 text-left">
           <label class="block text-gray-700 font-medium mb-2">Hours of study per week</label>
-          <input
+          <input required
             type="range"
             min="4" max="40" step="4"
             x-model="hours"
@@ -172,17 +174,23 @@ function roadmapGenerator () {
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
           <div>
             <label class="block text-gray-700 font-medium mb-2">Start date</label>
-            <input type="date" x-model="start_date" name="start_date" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400" />
+            <input required type="date" x-model="start_date" name="start_date" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400" />
           </div>
           <div>
             <label class="block text-gray-700 font-medium mb-2">End date</label>
-            <input type="date"  x-model="end_date" name="end_date" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400" />
+            <input required type="date"  x-model="end_date" name="end_date" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400" />
           </div>
         </div>
 
-        <button type="submit" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-xl transition w-full sm:w-auto">
-          Enter
-        </button>
+        {% if user.is_authenticated %}
+          <button type="submit" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-xl transition w-full sm:w-auto">
+            Enter
+          </button>
+        {% else %}
+          <a href="{% url 'social:begin' 'google-oauth2' %}" class="mt-6 block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-xl text-center transition w-full sm:w-auto">
+            Log in to continue
+          </a>
+        {% endif %}
       </form>
     </div>
 
@@ -208,7 +216,7 @@ function roadmapGenerator () {
       x-cloak
          class="space-y-6 ">
 
-      <h2 class="text-2xl font-bold text-gray-800">Select a suggested roadmap</h2>
+      <h2 class="text-2xl font-bold text-gray-800">Select a suggested project</h2>
 
       <form action="{% url 'create_roadmap' %}" method="post"
             @submit="submitting = true"
@@ -219,6 +227,9 @@ function roadmapGenerator () {
         <input type="hidden" name="topic"         :value="topic">
         <input type="hidden" name="total_hours"   :value="totalHours">
         <input type="hidden" name="selected_project" :value="selectedIdea">
+        <input type="hidden" name="week_hours"  :value="hours">
+        <input type="hidden" name="start_date"  :value="start_date">
+        <input type="hidden" name="end_date"    :value="end_date">
 
         <div class="flex flex-col gap-4">
           <template x-for="idea in ideas" :key="idea">

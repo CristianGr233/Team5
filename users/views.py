@@ -6,6 +6,8 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, get_object_or_404, render
 from .models import Roadmap
+from datetime import timedelta
+import math
 
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 API_KEY            = config("OPENROUTER_API_KEY")
@@ -88,9 +90,12 @@ def create_roadmap(request):
         return HttpResponseBadRequest("POST expected")
 
     try:
-        topic         = request.POST["topic"].strip()
-        total_hours   = int(request.POST["total_hours"])          # ← берём готовое
-        project_idea  = request.POST["selected_project"].strip()
+        topic = request.POST["topic"].strip()
+        week_hours = int(request.POST["week_hours"])
+        total_hours = int(request.POST["total_hours"])
+        start_date = dt.date.fromisoformat(request.POST["start_date"])
+        end_date = dt.date.fromisoformat(request.POST["end_date"])
+        project_idea = request.POST["selected_project"].strip()
     except (KeyError, ValueError):
         return HttpResponseBadRequest("Bad data")
 
@@ -105,7 +110,7 @@ def create_roadmap(request):
         f"The project idea is: <{project_idea}>. "
         "Please provide output as JSON file I can download. "
         "The JSON file should follow the following structure NO EXTRA TEXT DO NOT FORGET FINAL PROJECT PART: "
-        '{ "topics":[ { "name": "", "hours": 0, "subtopics": [ { "name": "", "description": "" } ], "project_part": "" } ], '
+        '{ "total_hours":"", "topics":[ { "name": "", "hours": 0, "subtopics": [ { "name": "", "description": "" } ], "project_part": "" } ], '
         '"final_project": { "name": "", "description": "" } }'
     )
 
@@ -114,6 +119,7 @@ def create_roadmap(request):
         "model": "openai/gpt-4o-mini",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 4000,
+        "temperature": 0.8,
     }
 
     try:
@@ -130,7 +136,10 @@ def create_roadmap(request):
     roadmap = Roadmap.objects.create(
         user=request.user,
         topic=topic,
+        week_hours=week_hours,
         total_hours=total_hours,
+        start_date=start_date,
+        end_date=end_date,
         project_idea=project_idea,
         raw_json=raw_json,
     )
@@ -139,6 +148,62 @@ def create_roadmap(request):
 
 def roadmap_detail(request, roadmap_id):
     roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
-    return render(request, "roadmap.html", {"roadmap": roadmap})
+
+    raw     = roadmap.raw_json
+    topics  = []
+    final   = {}
+
+    try:
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if not m:
+            raise ValueError("JSON object not found in raw_json")
+
+        parsed = json.loads(m.group(0))
+        topics = parsed.get("topics", [])
+        final  = parsed.get("final_project", {})
+    except Exception as e:
+        print("❌ Problem with raw_json:", e)
+        print("RAW repr:", repr(raw)[:400])
+
+    daily_quota = roadmap.week_hours / 7
+    cur_date = roadmap.start_date
+
+    for t in topics:
+        need_h = t.get("hours", 0)
+        days_needed = max(0, round(need_h / daily_quota))
+
+        end_date = cur_date + timedelta(days=days_needed - 1)
+
+        if end_date > roadmap.end_date:
+            end_date = roadmap.end_date  # не выходим за конец
+            days_needed = (end_date - cur_date).days + 1
+
+        if days_needed == 0 :
+            date_label = cur_date.strftime("%d %b")
+        else:
+            date_label = cur_date.strftime("%d %b")
+
+        t["date_label"] = date_label
+        t["daily_hours"] = round(daily_quota, 1)
+
+        cur_date = end_date + timedelta(days=1)
+
+        if cur_date > roadmap.end_date:
+            break
+
+    return render(request, "roadmap.html", {
+        "roadmap": roadmap,
+        "topics":  topics,
+        "final":   final,
+        "raw":     raw,
+    })
 
 
+def my_roadmaps(request):
+    roadmaps = Roadmap.objects.filter(user=request.user).order_by("-created_at")
+    return render(request, "my_roadmaps.html", {"roadmaps": roadmaps})
+
+def delete_roadmap(request, roadmap_id):
+    roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
+    roadmap.delete()
+    return JsonResponse({"ok": True})
