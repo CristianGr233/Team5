@@ -82,7 +82,7 @@ def generate_suggestions(request):
         "topic": topic
     })
 
-
+#roadmap ai request
 def create_roadmap(request):
     if request.method != "POST":
         return HttpResponseBadRequest("POST expected")
@@ -139,7 +139,7 @@ def create_roadmap(request):
     )
     return redirect("roadmap_detail", roadmap_id=roadmap.id)
 
-
+#roadmap view
 def roadmap_detail(request, roadmap_id):
     roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
     raw = roadmap.raw_json
@@ -193,12 +193,10 @@ def delete_roadmap(request, roadmap_id):
     roadmap.delete()
     return JsonResponse({"ok": True})
 
-
+#calendar api integration
 def add_to_calendar(request, roadmap_id, step_index):
-    # 1. Найти Roadmap
     roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
 
-    # 2. Достать social_auth запись Google OAuth2
     try:
         sa = request.user.social_auth.get(provider='google-oauth2')
     except request.user.social_auth.model.DoesNotExist:
@@ -206,12 +204,10 @@ def add_to_calendar(request, roadmap_id, step_index):
 
     extra = sa.extra_data
 
-    # 3. Если нет refresh_token — заставляем пользователя пройти consent заново
     if not extra.get('refresh_token'):
         request.session['post_oauth_redirect'] = request.path
         return redirect('social:begin', backend='google-oauth2')
 
-    # 4. Собираем Credentials
     creds = Credentials(
         token=extra.get('access_token'),
         refresh_token=extra.get('refresh_token'),
@@ -221,7 +217,6 @@ def add_to_calendar(request, roadmap_id, step_index):
         scopes=['https://www.googleapis.com/auth/calendar'],
     )
 
-    # 5. Если access_token истёк — обновляем через правильный Request
     if creds.expired:
         try:
             creds.refresh(Request())
@@ -232,7 +227,6 @@ def add_to_calendar(request, roadmap_id, step_index):
         sa.extra_data['expires_in'] = int((creds.expiry - datetime.utcnow()).total_seconds())
         sa.save()
 
-    # 6. Парсим roadmap.raw_json и вычисляем даты для шагов
     raw = roadmap.raw_json
     data = json.loads(re.search(r'\{.*\}', raw, re.S).group(0))
     topics = data.get('topics', [])
@@ -253,7 +247,6 @@ def add_to_calendar(request, roadmap_id, step_index):
     except Exception:
         return HttpResponseBadRequest("Step not found")
 
-    # 7. Формируем событие и отправляем в Google Calendar API
     start_dt = datetime.combine(step['start'], time(17, 0))
 
     days_needed = max(1, math.ceil(step['hours'] / daily_quota))
@@ -269,11 +262,10 @@ def add_to_calendar(request, roadmap_id, step_index):
     service = build('calendar', 'v3', credentials=creds)
     created = service.events().insert(calendarId='primary', body=event).execute()
 
-    # 8. Возвращаем результаты
     return redirect('roadmap_detail', roadmap_id=roadmap.id)
 
 
-
+#api for articles
 def get_or_generate_article(request, roadmap_id):
     roadmap = get_object_or_404(Roadmap, id=roadmap_id, user=request.user)
     subtopic = request.POST.get('subtopic','').strip()
@@ -284,7 +276,6 @@ def get_or_generate_article(request, roadmap_id):
     from_cache = True
     if not art:
         from_cache = False
-        # Просим AI отдать строго JSON с полями content и sources
         prompt = (
             f"Write steps to learn '{subtopic}' (5–7 bullet points). "
             "Also provide a list of 3 reputable sources (URLs) to use for research. "
@@ -303,12 +294,10 @@ def get_or_generate_article(request, roadmap_id):
             r.raise_for_status()
             raw = r.json()["choices"][0]["message"]["content"]
 
-            # Вычленяем JSON из ответа
             m = re.search(r"\{.*\}", raw, re.S)
             parsed = json.loads(m.group(0))
-            steps = parsed["content"]    # список строк
-            sources = parsed["sources"]  # список URL
-            # Приводим к тексту
+            steps = parsed["content"]
+            sources = parsed["sources"]
             content_text = "\n".join(f"{s}" for i,s in enumerate(steps))
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -321,7 +310,6 @@ def get_or_generate_article(request, roadmap_id):
             sources=sources
         )
 
-    # Отдаём все поля фронту
     return JsonResponse({
         "topic":      art.topic,
         "content":    art.content,

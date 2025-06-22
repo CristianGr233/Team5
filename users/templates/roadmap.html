@@ -100,21 +100,20 @@
            panelSources: []
          }">
       <h1 class="text-2xl text-bold">{{ roadmap.topic }} Roadmap</h1>
-      <!-- flex-колонка -->
       <div class="flex flex-col items-center relative">
 
-        <!-- вертикальная линия растягиваемая -->
+        <!-- vertical line -->
         <div class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2
                     w-1 bg-blue-900"></div>
 
-        <!-- верхняя точка -->
+        <!-- upper point -->
         <div class="w-4 h-4 bg-blue-900 rounded-full mb-4 z-10"></div>
 
-        <!-- список шагов -->
+        <!-- steps list -->
         <ul class="w-full space-y-12 mt-4">
           {% for t in topics %}
             <li class="relative flex justify-center">
-              <!-- соединительная точка -->
+              <!-- connection point -->
               <span class="absolute -top-5 left-1/2 -translate-x-1/2
               w-2 h-2 bg-blue-900 transform rotate-45"></span>
               <div class="absolute -top-7 left-1/2 translate-x-2 ml-2 flex items-center space-x-2">
@@ -202,13 +201,13 @@
           x-transition.opacity
           class="fixed inset-0 flex z-50"
         >
-          <!-- затемнённый фон -->
+          <!-- bg overlay -->
           <div
             class="absolute inset-0 bg-black bg-opacity-50"
             @click="showPanel = false"
           ></div>
 
-          <!-- сама панель справа -->
+          <!-- side bar -->
           <div
             class="relative ml-auto w-1/3 h-full bg-white shadow-lg"
             @click.stop
@@ -251,7 +250,7 @@
         </div>
 
 
-        <!-- нижняя точка -->
+        <!-- lower point -->
         <div class="w-4 h-4 bg-blue-900 rounded-full mt-8"></div>
       </div>
 
