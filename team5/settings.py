@@ -54,12 +54,26 @@ LOGOUT_REDIRECT_URL = '/'
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
-SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['name', 'email', 'picture']
+SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['name',
+                                        'email',
+                                        'picture',
+                                        'refresh_token',
+                                        'access_token',
+                                        'expires_in',
+                                        'token_type',
+                                        'id_token',
+                                        'scope',]
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
+    'access_type': 'offline',
+    'prompt': 'consent',
+}
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     'openid',
     'email',
     'profile',
+    'https://www.googleapis.com/auth/calendar',
 ]
 
 OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')

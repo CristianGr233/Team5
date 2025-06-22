@@ -130,9 +130,14 @@
                   </svg>
                 </summary>
                 <div class="mt-3 bg-white rounded-xl shadow-md p-4 text-sm text-gray-700">
-                  <span class="flex-row justify-between">
+                  <span class="flex flex-row justify-between items-center">
                     <p><b>Hours:</b> {{ t.hours }}</p>
-                    <p><b>Hours/day:</b> {{ t.hours }}</p>
+                    <a
+                      href="{% url 'index' %}"
+                      class="ml-4 bg-blue-400 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md"
+                    >
+                      Add to calendar
+                    </a>
                   </span>
                   {% if t.subtopics %}
                     <ul class="list-disc pl-5 mt-2 space-y-1">
