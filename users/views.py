@@ -255,7 +255,10 @@ def add_to_calendar(request, roadmap_id, step_index):
 
     # 7. Формируем событие и отправляем в Google Calendar API
     start_dt = datetime.combine(step['start'], time(17, 0))
-    end_dt = start_dt + timedelta(hours=step['hours'])
+
+    days_needed = max(1, math.ceil(step['hours'] / daily_quota))
+    end_date = step['start'] + timedelta(days=days_needed)
+    end_dt = datetime.combine(end_date, time(17, 0))
     event = {
         'summary': f"{roadmap.topic}",
         'description': f"Roadmap step '" + step['name'] + "', " + str(step['hours']) + "h.",
