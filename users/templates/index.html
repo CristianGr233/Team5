@@ -3,12 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TODO</title>
+  <title>StudyMap</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/custom.css' %}" />
+  <link rel="icon" type="image/x-icon" href="{% static 'images/favicon1.ico' %}">
 
   <style>
     body {
@@ -54,7 +55,7 @@ function roadmapGenerator () {
 </script>
 
 
-<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64">
+<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64 lg:overflow-hidden">
 <!-- Header -->
 <header class="bg-gray-100 w-full h-[20vh]">
   <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 pt-4 flex-wrap">
@@ -127,7 +128,9 @@ function roadmapGenerator () {
 </header>
 
 <!-- Main -->
-<main class="flex-1 flex justify-center items-start px-4 h-[80vh]">
+<main class="flex-1 flex justify-center items-start px-4 h-[80vh] ">
+  <img src="{% static 'images/road.png' %}" class="hidden lg:block absolute right-0 h-full w-auto mr-8"></img>
+  <img src="{% static 'images/calendar.png' %}" class="hidden lg:block absolute left-0 h-[60vh] w-auto mt-10 ml-16"></img>
   <div
     class="bg-white shadow-2xl rounded-3xl p-8 sm:p-10 max-w-xl w-full text-center md:h-[530px] relative"
     x-data="roadmapGenerator()"

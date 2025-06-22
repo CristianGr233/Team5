@@ -3,15 +3,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>{{ roadmap.topic }} – Roadmap</title>
+  <title>{{ roadmap.topic }}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Montserrat', sans-serif; }
+    body { font-family: 'Montserrat', sans-serif;
+           background-image:
+        url("{% static 'images/branches_test.svg' %}"),
+        url("{% static 'images/branches_test.svg' %}");
+      background-repeat: repeat-y, repeat-y;
+      background-position: left 3rem top, right 3rem top;
+      min-height: 80vh}
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col lg:mx-64 items-center">
+<body class="bg-gray-100 min-h-screen flex flex-col mx-3 lg:mx-64 items-center">
 <!-- Header -->
   <header class="bg-gray-100 w-full h-[20vh]">
     <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 pt-4 flex-wrap">
@@ -83,20 +89,88 @@
     </div>
   </header>
 
-  <div class="bg-white shadow-xl rounded-2xl p-8 max-w-3xl w-full">
+  <div class="bg-white shadow-xl rounded-2xl p-8 max-w-3xl mb-6 w-full">
+    <section class="flex flex-col items-center  relative w-full max-w-xl mx-auto ">
+      <h1 class="text-2xl text-bold">{{ roadmap.topic }} Roadmap</h1>
+      <!-- flex-колонка -->
+      <div class="flex flex-col items-center relative">
 
-    <h1 class="text-2xl font-bold mb-4">{{ roadmap.topic }} – Roadmap (raw prompt)</h1>
+        <!-- вертикальная линия растягиваемая -->
+        <div class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2
+                    w-1 bg-blue-900"></div>
 
-    <pre class="bg-gray-100 p-4 rounded-xl overflow-auto text-sm">{{ roadmap.raw_json }}</pre>
+        <!-- верхняя точка -->
+        <div class="w-4 h-4 bg-blue-900 rounded-full mb-4 z-10"></div>
+
+        <!-- список шагов -->
+        <ul class="w-full space-y-12 mt-4">
+          {% for t in topics %}
+            <li class="relative flex justify-center">
+              <!-- соединительная точка -->
+              <span class="absolute -top-5 left-1/2 -translate-x-1/2
+              w-2 h-2 bg-blue-900 transform rotate-45"></span>
+              <div class="absolute -top-7 left-1/2 translate-x-2 ml-2 flex items-center space-x-2">
+                <div class="w-10 md:w-32 h-px bg-blue-900"></div>
+                <div class="text-l text-blue-900 whitespace-nowrap">
+                  {{ t.date_label }}
+                </div>
+              </div>
+              <!-- card-->
+              <details class="group w-full">
+                <summary
+                  class="cursor-pointer bg-blue-500 hover:bg-blue-600
+                         text-white font-semibold py-3 pl-6 pr-12 rounded-xl
+                         shadow-md relative">
+                  {{ t.name }}
+                  <svg class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2
+                              transition-transform group-open:rotate-180"
+                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2" stroke-linecap="round"
+                          d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </summary>
+                <div class="mt-3 bg-white rounded-xl shadow-md p-4 text-sm text-gray-700">
+                  <span class="flex-row justify-between">
+                    <p><b>Hours:</b> {{ t.hours }}</p>
+                    <p><b>Hours/day:</b> {{ t.hours }}</p>
+                  </span>
+                  {% if t.subtopics %}
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                      {% for s in t.subtopics %}
+                        <li><b>{{ s.name }}</b> — {{ s.description }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                  {% if t.project_part %}
+                    <p class="mt-2"><b>Project part:</b> {{ t.project_part }}</p>
+                  {% endif %}
+                </div>
+              </details>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- нижняя точка -->
+        <div class="w-4 h-4 bg-blue-900 rounded-full mt-8"></div>
+      </div>
+
+      <!-- final project-->
+      <div class="mt-12 bg-orange-100 border-l-4 border-orange-500
+                  p-6 rounded-xl shadow-md">
+        <h3 class="text-lg font-bold text-orange-800 mb-2">
+          Final project: {{ final.name }}
+        </h3>
+        <p class="text-sm text-gray-700">{{ final.description }}</p>
+
+        <div class="text-right mt-6">
+          <button class="bg-orange-500 hover:bg-orange-600
+                         text-white font-semibold py-2 px-6 rounded-xl">
+            Save
+          </button>
+        </div>
+      </div>
+    </section>
 
   </div>
-
-  <ul class="text-gray-700 mb-6">
-      <li><b>Total hours:</b> {{ roadmap.total_hours }}</li>
-      <li><b>Hours / week:</b> {{ roadmap.week_hours }}</li>
-      <li><b>Start:</b> {{ roadmap.start_date }}</li>
-      <li><b>End:</b> {{ roadmap.end_date }}</li>
-  </ul>
-
 </body>
 </html>

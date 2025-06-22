@@ -110,13 +110,16 @@
             <a href="{% url 'roadmap_detail' r.id %}" class="text-xl font-semibold hover:underline">
               {{ r.topic }}
             </a>
-            <span class="text-sm text-gray-500">{{ r.created_at|date:"Y-m-d" }}</span>
+            <p class="text-sm text-gray-500">
+            {{ r.start_date|date:"d M Y" }} → {{ r.end_date|date:"d M Y" }}
+            </p>
           </div>
 
-          <p class="text-sm text-gray-600 mt-2">{{ r.project_idea }}</p>
+          <p class="text-sm text-gray-600 mt-2 ">Final project: <b>{{ r.project_idea }}</b></p>
           <p class="text-sm text-gray-500 mt-1">
             {{ r.total_hours }} h total &middot; {{ r.week_hours }} h/week
           </p>
+
 
           <!-- Delete -->
           <button
